@@ -1,1 +1,52 @@
 
+#!/usr/bin/env groovy
+import java.net.URL
+import hudson.model.*
+
+node
+{
+    stage('Git Poll')
+    {
+        git credentialsId: '6f3fb6b5-a245-4dcd-b8bb-0ada40f69fb5', url: 'https://github.com/jsinghx13/DevOpsClassCodes'
+        //triggers pollSCM('*/2 * * * *') 
+    }
+    stage('Compile')
+    {
+        withMaven(maven:'Maven')
+        {
+            sh 'mvn compile'
+        }
+    }
+    stage('Review')
+    {
+        withMaven(maven:'Maven')
+        {
+            sh 'mvn pmd:pmd'
+        }
+    }
+    stage('Test')
+    {
+        withMaven(maven:'Maven')
+        {
+            sh 'mvn test'
+        }
+    }
+    stage('Check Code Coverage')
+    {
+        withMaven(maven:'Maven')
+        {
+            sh 'mvn cobertura:cobertura -Dcobertura.report.format=xml'
+        }
+    }
+    stage('Package')
+    {
+        withMaven(maven:'Maven')
+        {
+            sh 'mvn package'
+        }
+    }
+    stage('Transfer')
+    {
+        sh 'scp /var/lib/jenkins/workspace/WarFilePipelineAsCode/target/addressbook.war tomcat@node1:/opt/tomcat/apache-tomcat-9.0.33/webapps/addressbook.war'
+    }
+}
